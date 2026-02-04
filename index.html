@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AniNote Cloud Gallery</title>
+    <style>
+        :root {
+            --primary-color: #FF69B4; /* Hot pink for anime feel */
+            --secondary-color: #4A90E2;
+            --bg-color: #f0f2f5;
+            --panel-bg: #ffffff;
+            --text-color: #333;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 2D Anime-style Branding Header */
+        .anime-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #fff0f6 0%, #e6f7ff 100%);
+            padding: 15px 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid var(--primary-color);
+        }
+
+        .brand-svg {
+            width: 60px;
+            height: 60px;
+            margin-right: 15px;
+            filter: drop-shadow(2px 2px 2px rgba(255, 105, 180, 0.4));
+        }
+
+        .brand-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            text-shadow: 1px 1px 0px var(--secondary-color);
+            letter-spacing: 1px;
+        }
+
+        .container {
+            background-color: var(--panel-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 900px;
+        }
+
+        h2, h3 {
+            color: var(--secondary-color);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        .config-section, .upload-section {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 1px solid #eee;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box; /* Important for padding */
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform 0.1s, background-color 0.2s;
+            font-size: 1rem;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary { background-color: var(--secondary-color); color: white; }
+        .btn-primary:hover { background-color: #357abd; }
+        .btn-action { background-color: var(--primary-color); color: white; }
+        .btn-action:hover { background-color: #e055a0; }
+
+        #status-message {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+
+        .status-success { background-color: #d4edda; color: var(--success-color); border: 1px solid #c3e6cb; }
+        .status-error { background-color: #f8d7da; color: var(--error-color); border: 1px solid #f5c6cb; }
+        .status-loading { background-color: #e2e3e5; color: #383d41; border: 1px solid #d6d8db; }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .image-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .image-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .image-card p {
+            padding: 10px;
+            margin: 0;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .upload-controls {
+             display: flex;
+             gap: 10px;
+             align-items: flex-end;
+             flex-wrap: wrap;
+        }
+        .upload-controls .form-group {
+            flex: 1;
+            min-width: 200px;
+            margin-bottom: 0;
+        }
+
+        .warning-text {
+            font-size: 0.85rem;
+            color: #777;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="anime-header">
+        <svg class="brand-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="45" fill="#fff" stroke="#FF69B4" stroke-width="4"/>
+            <path d="M50 15 L61 38 L85 41 L67 58 L72 82 L50 70 L28 82 L33 58 L15 41 L39 38 Z" fill="#FF69B4" stroke="#4A90E2" stroke-width="2" transform="rotate(15, 50, 50)"/>
+            <rect x="35" y="45" width="30" height="35" fill="white" stroke="#4A90E2" stroke-width="3" rx="5"/>
+            <line x1="40" y1="55" x2="60" y2="55" stroke="#4A90E2" stroke-width="2"/>
+            <line x1="40" y1="65" x2="60" y2="65" stroke="#4A90E2" stroke-width="2"/>
+        </svg>
+        <div class="brand-title">AniNote Cloud</div>
+    </header>
+
+    <main class="container">
+        <section class="config-section">
+            <h3>GitHub Configuration</h3>
+            <p class="warning-text">Credentials are kept in your browser memory only. Do not use on public computers.</p>
+            <div class="form-group">
+                <label for="gh-token">Personal Access Token (PAT):</label>
+                <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+            </div>
+            <div style="display: flex; gap: 15px;">
+                <div class="form-group" style="flex: 1;">
+                    <label for="gh-owner">Repo Owner (Username):</label>
+                    <input type="text" id="gh-owner" placeholder="e.g., octocat">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="gh-repo">Repo Name:</label>
+                    <input type="text" id="gh-repo" placeholder="e.g., my-notes-repo">
+                </div>
+            </div>
+            <div class="form-group">
+                 <label for="gh-path">Folder Path (Optional):</label>
+                 <input type="text" id="gh-path" placeholder="e.g., images/">
+            </div>
+        </section>
+
+        <div id="status-message"></div>
+
+        <section class="upload-section">
+            <h3>Add New Image</h3>
+            <div class="upload-controls">
+                <div class="form-group">
+                    <label for="file-input">Select Image:</label>
+                    <input type="file" id="file-input" accept="image/png, image/jpeg, image/gif">
+                </div>
+                <div class="form-group">
+                     <label for="file-name-input">Save as Filename (e.g., my-pic.png):</label>
+                     <input type="text" id="file-name-input" placeholder="Enter filename...">
+                </div>
+                <div>
+                    <button id="btn-add-image" class="btn btn-action">Upload Image</button>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                 <h2>Cloud Gallery</h2>
+                 <button id="btn-refresh" class="btn btn-primary">Refresh List</button>
+            </div>
+            
+            <div id="image-list" class="image-grid">
+                <p style="grid-column: 1/-1; text-align: center; color: #888;">Configure GitHub details and click Refresh to load images.</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // UI Elements
+        const statusDiv = document.getElementById('status-message');
+        const imageListDiv = document.getElementById('image-list');
+        const btnRefresh = document.getElementById('btn-refresh');
+        const btnAddImage = document.getElementById('btn-add-image');
+        const fileInput = document.getElementById('file-input');
+        const fileNameInput = document.getElementById('file-name-input');
+
+        // Configuration Inputs
+        const inputToken = document.getElementById('gh-token');
+        const inputOwner = document.getElementById('gh-owner');
+        const inputRepo = document.getElementById('gh-repo');
+        const inputPath = document.getElementById('gh-path');
+
+        // Helper: Show Status Messages
+        function showStatus(message, type = 'success') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status-${type}`;
+            statusDiv.style.display = 'block';
+            // Auto-hide success messages after 5 seconds
+            if(type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Helper: Validate Config
+        function getConfig() {
+            const token = inputToken.value.trim();
+            const owner = inputOwner.value.trim();
+            const repo = inputRepo.value.trim();
+            let path = inputPath.value.trim();
+
+            if (!token || !owner || !repo) {
+                showStatus("Please fill in GitHub Token, Owner, and Repo name.", "error");
+                return null;
+            }
+            
+            // Normalize path: remove leading slash, ensure trailing slash if not empty
+            if (path.startsWith('/')) path = path.substring(1);
+            if (path && !path.endsWith('/')) path += '/';
+
+            return { token, owner, repo, path };
+        }
+
+        // --- GitHub API Interactions ---
+
+        // Generic API Fetch Wrapper
+        async function githubApiCall(endpoint, method = 'GET', body = null, config) {
+            const url = `https://api.github.com/repos/${config.owner}/${config.repo}/${endpoint}`;
+            
+            const headers = {
+                'Authorization': `token ${config.token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json',
+            };
+
+            const options = { method, headers };
+            if (body) options.body = JSON.stringify(body);
+
+            try {
+                const response = await fetch(url, options);
+
+                // Handle specific HTTP error codes
+                if (response.status === 404 && method === 'GET') {
+                     // 404 on GET means folder/file doesn't exist yet. Not necessarily a critical error.
+                     return null; 
+                }
+                if (response.status === 401) throw new Error("Authentication failed. Check your token.");
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `API Error: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error("GitHub API Error:", error);
+                throw error;
+            }
+        }
+
+        // Function 1: Load Images from Cloud
+        async function loadImages() {
+            const config = getConfig();
+            if (!config) return;
+
+            showStatus("Fetching image list...", "loading");
+            imageListDiv.innerHTML = ''; // Clear current list
+
+            try {
+                // API call to get contents of the folder path
+                const contents = await githubApiCall(`contents/${config.path}`, 'GET', null, config);
+
+                if (!contents || !Array.isArray(contents) || contents.length === 0) {
+                    showStatus("No images found in this location.", "success");
+                    imageListDiv.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Folder is empty or does not exist yet.</p>';
+                    return;
+                }
+
+                // Filter for image files only
+                const imageFiles = contents.filter(file => 
+                    file.type === 'file' && 
+                    file.name.match(/\.(jpg|jpeg|png|gif)$/i)
+                );
+
+                if (imageFiles.length === 0) {
+                     showStatus("No supported image files found.", "success");
+                     return;
+                }
+
+                // Render images
+                imageFiles.forEach(file => {
+                    const card = document.createElement('div');
+                    card.className = 'image-card';
+                    // We use download_url to display directly from GitHub raw storage
+                    card.innerHTML = `
+                        <img src="${file.download_url}" alt="${file.name}" loading="lazy">
+                        <p title="${file.name}">${file.name}</p>
+                    `;
+                    imageListDiv.appendChild(card);
+                });
+
+                showStatus(`Successfully loaded ${imageFiles.length} images.`, "success");
+
+            } catch (error) {
+                showStatus(`Failed to load images: ${error.message}`, "error");
+            }
+        }
+
+
+        // Function 2: Add (Upload/Update) Image to Cloud
+        async function uploadImage() {
+            const config = getConfig();
+            if (!config) return;
+
+            const file = fileInput.files[0];
+            const targetFilename = fileNameInput.value.trim();
+
+            if (!file) {
+                showStatus("Please select a file to upload.", "error");
+                return;
+            }
+            if (!targetFilename) {
+                showStatus("Please enter a filename for saving.", "error");
+                return;
+            }
+
+            // Ensure filename has extension
+            if(!targetFilename.match(/\.(jpg|jpeg|png|gif)$/i)) {
+                 showStatus("Filename must end with an image extension (.jpg, .png, etc.)", "error");
+                 return;
+            }
+
+            showStatus("Preparing upload...", "loading");
+
+            // 1. Read file and convert to Base64
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                // Remove the data URL prefix (e.g., "data:image/png;base64,") to get raw base64 string
+                const base64Content = e.target.result.split(',')[1];
+
+                try {
+                    showStatus("Checking for existing file...", "loading");
+                    const fullPath = `${config.path}${targetFilename}`;
+                    
+                    // 2. Check if file exists to get its SHA (required for overwriting in GitHub API)
+                    const existingFile = await githubApiCall(`contents/${fullPath}`, 'GET', null, config);
+                    
+                    const requestBody = {
+                        message: `Add/Update image: ${targetFilename} via AniNote`,
+                        content: base64Content
+                    };
+
+                    // If overwriting, add the SHA
+                    if (existingFile && existingFile.sha) {
+                        requestBody.sha = existingFile.sha;
+                        showStatus("File exists. Overwriting...", "loading");
+                    } else {
+                        showStatus("Creating new file...", "loading");
+                    }
+
+                    // 3. Send PUT request to create/update file
+                    await githubApiCall(`contents/${fullPath}`, 'PUT', requestBody, config);
+
+                    showStatus(`Successfully uploaded ${targetFilename}!`, "success");
+                    
+                    // Reset inputs
+                    fileInput.value = '';
+                    fileNameInput.value = '';
+
+                    // Reload list to show new image
+                    loadImages();
+
+                } catch (error) {
+                    showStatus(`Upload failed: ${error.message}`, "error");
+                }
+            };
+
+            reader.onerror = () => {
+                 showStatus("Failed to read local file.", "error");
+            };
+
+            // Trigger file reading
+            reader.readAsDataURL(file);
+        }
+
+
+        // Event Listeners
+        btnRefresh.addEventListener('click', loadImages);
+        btnAddImage.addEventListener('click', uploadImage);
+
+        // Auto-fill filename input when a file is selected
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                fileNameInput.value = e.target.files[0].name;
+            }
+        });
+
+    </script>
+</body>
+</html>
